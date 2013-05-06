@@ -1,53 +1,53 @@
 import sys
 import json
 
+ALL_TOKENS = ' '
 
-def loadSentFile(fp):
-    sentMap = {}
-    while 1:
-        line = fp.readline()
-        if not line:
-            break;
-        loadSent(sentMap, line)
-    return sentMap
-
-def loadSent(sentMap,line):
-    sent = line.split('\t')
-    sentMap[sent[0]] = float(sent[1])
-
-def processTweets(fp, sentMap):
+def processTweets(fp):
+    freqMap = { ALL_TOKENS :0.0 }
     while 1:
         line = fp.readline()
         if not line:
             break;
         tweet = readTweet(line)
         if tweet:
-            computeSentiment(tweet, sentMap)
+            countTokens(tweet, freqMap)
+    return freqMap
      
 
-def computeSentiment(tweet, sentMap ):       
-    sentIndex = 0.0
+def countTokens(tweet, freqMap ):       
     text = tweet['text']
-    tokens = text.split(' ')
+    tokens = text.split()    
     for t in tokens:
-        if t in sentMap:
-            sentIndex += sentMap[t]
-    print sentIndex
-
-
+        if len(t) > 0:
+            freqMap[ALL_TOKENS] +=1.0
+            if t in freqMap:
+                freqMap[t] += 1.0
+            else:
+                freqMap[t] = 1.0
+         
 
 def readTweet(line):        
     tweet = json.loads(line)
-    if 'lang' in tweet and tweet['lang'] == 'en' and'created_at' in tweet:
+    if 'created_at' in tweet:
         return tweet  
             
 
-def main():
-    sent_file = open(sys.argv[1])
-    tweet_file = open(sys.argv[2])
+def computeFrequency(freqMap):
+    allTokens = freqMap.pop(ALL_TOKENS)
+    for i in freqMap.keys():
+        try:
+            token = i.encode('utf-8')
+            print token, ' ', freqMap[i]/allTokens
+        except UnicodeEncodeError:
+            pass
 
-    sentMap = loadSentFile(sent_file)
-    processTweets(tweet_file,sentMap)
+
+def main():
+    tweet_file = open(sys.argv[1])
+    frequencyMap = processTweets(tweet_file)
+    computeFrequency(frequencyMap)
+
 
 if __name__ == '__main__':
     main()
